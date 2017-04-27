@@ -1,9 +1,8 @@
 package lib.webrtc;
 
-import android.content.Context;
+import android.app.Application;
 import android.content.pm.PackageManager;
 import android.util.Log;
-import android.view.View;
 
 import org.appspot.apprtc.AppRTCAudioManager;
 import org.appspot.apprtc.AppRTCClient;
@@ -39,10 +38,9 @@ import rx.functions.Action1;
  * @date 2017/4/26.
  */
 
-public enum RtcUtils implements AppRTCClient.SignalingEvents,
-        PeerConnectionClient.PeerConnectionEvents {
+public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClient.PeerConnectionEvents {
 
-    INSTANCE;
+    INSTANCE,;
 
     // List of mandatory application permissions.
     private static final String[] MANDATORY_PERMISSIONS = {
@@ -50,7 +48,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
             "android.permission.RECORD_AUDIO", "android.permission.INTERNET"
     };
 
-    private Context mContext;
+    private Application mContext;
     private List<VideoRenderer.Callbacks> remoteRenderers;
     private AppRTCClient.RoomConnectionParameters roomConnectionParameters;
     private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
@@ -66,7 +64,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
     private String TAG = "RtcUtils";
     private static final int STAT_CALLBACK_PERIOD = 1000;
 
-    public void init(Context context) {
+    public void init(Application context) {
         if (nowSurfaceViewRenderer != null) {
             destroy();
         }
@@ -85,14 +83,14 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
         surfaceViewRenderer.init(rootEglBase.getEglBaseContext(), null);
         surfaceViewRenderer.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL);
         surfaceViewRenderer.setEnableHardwareScaler(true /* enabled */);
-//        localProxyRenderer.setTarget(surfaceViewRenderer);
+        //        localProxyRenderer.setTarget(surfaceViewRenderer);
         remoteProxyRenderer.setTarget(surfaceViewRenderer);
         surfaceViewRenderer.setMirror(false);
         // Check for mandatory permissions.
         for (String permission : MANDATORY_PERMISSIONS) {
             if (mContext.checkCallingOrSelfPermission(permission)
                     != PackageManager.PERMISSION_GRANTED) {
-                Log.e("","Permission " + permission + " is not granted");
+                Log.e("", "Permission " + permission + " is not granted");
             }
         }
 
@@ -178,7 +176,6 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void destroy() {
-        stopVideo();
         try {
             remoteProxyRenderer.setTarget(null);
             localProxyRenderer.setTarget(null);
@@ -206,7 +203,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onLocalDescription(SessionDescription sdp) {
-        Log.e(TAG,"onLocalDescription");
+        Log.e(TAG, "onLocalDescription");
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
         Observable.just(sdp)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -238,19 +235,19 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onIceCandidate(IceCandidate candidate) {
-        Log.e(TAG,"onIceCandidate");
+        Log.e(TAG, "onIceCandidate");
         Observable.just(candidate)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<IceCandidate>() {
                     @Override
-                    public void call( IceCandidate iceCandidate) {
+                    public void call(IceCandidate iceCandidate) {
                         if (appRtcClient != null) {
                             appRtcClient.sendLocalIceCandidate(iceCandidate);
                         }
                     }
                 }, new Action1<Throwable>() {
                     @Override
-                    public void call( Throwable throwable) {
+                    public void call(Throwable throwable) {
                         throwable.printStackTrace();
                     }
                 });
@@ -258,19 +255,19 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onIceCandidatesRemoved(IceCandidate[] candidates) {
-        Log.e(TAG,"onIceCandidatesRemoved");
+        Log.e(TAG, "onIceCandidatesRemoved");
         Observable.just(candidates)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<IceCandidate[]>() {
                     @Override
-                    public void call( IceCandidate[] iceCandidates) {
+                    public void call(IceCandidate[] iceCandidates) {
                         if (appRtcClient != null) {
                             appRtcClient.sendLocalIceCandidateRemovals(iceCandidates);
                         }
                     }
                 }, new Action1<Throwable>() {
                     @Override
-                    public void call( Throwable throwable) {
+                    public void call(Throwable throwable) {
                         throwable.printStackTrace();
                     }
                 });
@@ -278,14 +275,14 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onIceConnected() {
-        Log.e(TAG,"onIceConnected");
+        Log.e(TAG, "onIceConnected");
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
         Observable.just("")
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<String>() {
                     @Override
-                    public void call( String s) {
-                        Log.e(TAG,"ICE connected, delay=" + delta + "ms");
+                    public void call(String s) {
+                        Log.e(TAG, "ICE connected, delay=" + delta + "ms");
                         final long delta = System.currentTimeMillis() - callStartedTimeMs;
                         Log.i(TAG, "Call connected: delay=" + delta + "ms");
                         if (peerConnectionClient == null) {
@@ -294,12 +291,10 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
                         }
                         // Enable statistics callback.
                         peerConnectionClient.enableStatsEvents(true, STAT_CALLBACK_PERIOD);
-//                        remoteProxyRenderer.setTarget(nowSurfaceViewRenderer);
-//                        nowSurfaceViewRenderer.setMirror(false);
                     }
                 }, new Action1<Throwable>() {
                     @Override
-                    public void call( Throwable throwable) {
+                    public void call(Throwable throwable) {
                         throwable.printStackTrace();
                     }
                 });
@@ -307,12 +302,12 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onIceDisconnected() {
-        Log.e(TAG,"onIceDisconnected");
+        Log.e(TAG, "onIceDisconnected");
         Observable.just("")
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<String>() {
                     @Override
-                    public void call( String s) {
+                    public void call(String s) {
                         destroy();
                     }
                 });
@@ -320,52 +315,52 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onPeerConnectionClosed() {
-        Log.e(TAG,"onPeerConnectionClosed");
+        Log.e(TAG, "onPeerConnectionClosed");
     }
 
     @Override
     public void onPeerConnectionStatsReady(StatsReport[] reports) {
-        Log.e(TAG,"onPeerConnectionStatsReady");
+        Log.e(TAG, "onPeerConnectionStatsReady");
     }
 
     @Override
     public void onPeerConnectionError(String description) {
-        Log.e(TAG,"onPeerConnectionError:" + description);
+        Log.e(TAG, "onPeerConnectionError:" + description);
     }
 
     @Override
     public void onConnectedToRoom(AppRTCClient.SignalingParameters params) {
-        Log.e(TAG,"onConnectedToRoom");
+        Log.e(TAG, "onConnectedToRoom");
         Observable.just(params)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<AppRTCClient.SignalingParameters>() {
                     @Override
-                    public void call( AppRTCClient.SignalingParameters params) {
+                    public void call(AppRTCClient.SignalingParameters params) {
                         final long delta = System.currentTimeMillis() - callStartedTimeMs;
                         signalingParameters = params;
-                        Log.e("RtcUtils","Creating peer connection, delay=" + delta + "ms");
+                        Log.e("RtcUtils", "Creating peer connection, delay=" + delta + "ms");
                         VideoCapturer videoCapturer = null;
                         if (peerConnectionParameters.videoCallEnabled) {
                             Logging.d("RtcUtils", "Creating capturer using camera1 API.");
                             videoCapturer = createCameraCapturer(new Camera1Enumerator(true));
                             if (videoCapturer == null) {
-                                Logging.e("RtcUtils","Failed to open camera");
+                                Logging.e("RtcUtils", "Failed to open camera");
                                 return;
                             }
                         }
                         peerConnectionClient.createPeerConnection(rootEglBase.getEglBaseContext(),
                                 localProxyRenderer,
                                 remoteRenderers, videoCapturer, signalingParameters);
-                        Log.e(TAG,"signalingParameters:" + signalingParameters.initiator);
+                        Log.e(TAG, "signalingParameters:" + signalingParameters.initiator);
                         if (signalingParameters.initiator) {
-                            Log.e("RtcUtils","Creating OFFER...");
+                            Log.e("RtcUtils", "Creating OFFER...");
                             // Create offer. Offer SDP will be sent to answering client in
                             // PeerConnectionEvents.onLocalDescription event.
                             peerConnectionClient.createOffer();
                         } else {
                             if (params.offerSdp != null) {
                                 peerConnectionClient.setRemoteDescription(params.offerSdp);
-                                Log.e("RtcUtils","Creating ANSWER...");
+                                Log.e("RtcUtils", "Creating ANSWER...");
                                 // Create answer. Answer SDP will be sent to offering client in
                                 // PeerConnectionEvents.onLocalDescription event.
                                 peerConnectionClient.createAnswer();
@@ -383,21 +378,21 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onRemoteDescription(SessionDescription sdp) {
-        Log.e(TAG,"onRemoteDescription");
+        Log.e(TAG, "onRemoteDescription");
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
         Observable.just(sdp)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<SessionDescription>() {
                     @Override
-                    public void call( SessionDescription sessionDescription) {
+                    public void call(SessionDescription sessionDescription) {
                         if (peerConnectionClient == null) {
                             Log.e(TAG, "Received remote SDP for non-initilized peer connection.");
                             return;
                         }
-                        Log.e(TAG,"Received remote " + sessionDescription.type + ", delay=" + delta + "ms");
+                        Log.e(TAG, "Received remote " + sessionDescription.type + ", delay=" + delta + "ms");
                         peerConnectionClient.setRemoteDescription(sessionDescription);
                         if (!signalingParameters.initiator) {
-                            Log.e(TAG,"Creating ANSWER...");
+                            Log.e(TAG, "Creating ANSWER...");
                             // Create answer. Answer SDP will be sent to offering client in
                             // PeerConnectionEvents.onLocalDescription event.
                             peerConnectionClient.createAnswer();
@@ -405,7 +400,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
                     }
                 }, new Action1<Throwable>() {
                     @Override
-                    public void call( Throwable throwable) {
+                    public void call(Throwable throwable) {
                         throwable.printStackTrace();
                     }
                 });
@@ -413,12 +408,12 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onRemoteIceCandidate(IceCandidate candidate) {
-        Log.e(TAG,"onRemoteIceCandidate");
+        Log.e(TAG, "onRemoteIceCandidate");
         Observable.just(candidate)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<IceCandidate>() {
                     @Override
-                    public void call( IceCandidate candidate) {
+                    public void call(IceCandidate candidate) {
                         if (peerConnectionClient == null) {
                             Log.e(TAG, "Received ICE candidate for a non-initialized peer connection.");
                             return;
@@ -427,7 +422,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
                     }
                 }, new Action1<Throwable>() {
                     @Override
-                    public void call( Throwable throwable) {
+                    public void call(Throwable throwable) {
                         throwable.printStackTrace();
                     }
                 });
@@ -435,12 +430,12 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onRemoteIceCandidatesRemoved(IceCandidate[] candidates) {
-        Log.e(TAG,"onRemoteIceCandidatesRemoved");
+        Log.e(TAG, "onRemoteIceCandidatesRemoved");
         Observable.just(candidates)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<IceCandidate[]>() {
                     @Override
-                    public void call( IceCandidate[] iceCandidates) {
+                    public void call(IceCandidate[] iceCandidates) {
                         if (peerConnectionClient == null) {
                             Log.e(TAG,
                                     "Received ICE candidate removals for a non-initialized peer connection.");
@@ -450,7 +445,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
                     }
                 }, new Action1<Throwable>() {
                     @Override
-                    public void call( Throwable throwable) {
+                    public void call(Throwable throwable) {
                         throwable.printStackTrace();
                     }
                 });
@@ -458,12 +453,12 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onChannelClose() {
-        Log.e(TAG,"onChannelClose");
+        Log.e(TAG, "onChannelClose");
         Observable.just("")
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<String>() {
                     @Override
-                    public void call( String s) {
+                    public void call(String s) {
                         destroy();
                     }
                 });
@@ -471,7 +466,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
 
     @Override
     public void onChannelError(String description) {
-        Log.e(TAG,"onChannelError:" + description);
+        Log.e(TAG, "onChannelError:" + description);
     }
 
     // This method is called when the audio manager reports audio device change,
@@ -512,21 +507,5 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents,
             }
         }
         return null;
-    }
-
-    public void startVideo() {
-        // Video is not paused for screencapture. See onPause.
-        if (peerConnectionClient != null) {
-            peerConnectionClient.startVideoSource();
-        }
-        nowSurfaceViewRenderer.setVisibility(View.VISIBLE);
-    }
-
-    public void stopVideo() {
-        // Video is not paused for screencapture. See onPause.
-        if (peerConnectionClient != null) {
-            peerConnectionClient.stopVideoSource();
-        }
-        nowSurfaceViewRenderer.setVisibility(View.GONE);
     }
 }
