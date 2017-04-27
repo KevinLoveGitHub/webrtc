@@ -64,6 +64,8 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
     private String TAG = "RtcUtils";
     private static final int STAT_CALLBACK_PERIOD = 1000;
 
+    public boolean isActive = false;
+
     public void init(Application context) {
         if (nowSurfaceViewRenderer != null) {
             destroy();
@@ -74,6 +76,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
         localProxyRenderer = new ProxyRenderer();
         remoteRenderers.add(remoteProxyRenderer);
         rootEglBase = EglBase.create();
+        isActive = true;
     }
 
     public void startRTC(String url, String roomId, SurfaceViewRenderer surfaceViewRenderer) {
@@ -177,6 +180,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void destroy() {
         try {
+            isActive = false;
             remoteProxyRenderer.setTarget(null);
             localProxyRenderer.setTarget(null);
             rootEglBase.release();
