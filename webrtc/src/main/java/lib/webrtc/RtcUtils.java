@@ -65,6 +65,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
     private static final int STAT_CALLBACK_PERIOD = 1000;
 
     public boolean isActive = false;
+    private SendOfferCallback mSendOfferCallback;
 
     public void init(Application context) {
         if (nowSurfaceViewRenderer != null) {
@@ -79,7 +80,8 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
         isActive = true;
     }
 
-    public void startRTC(String url, String roomId, SurfaceViewRenderer surfaceViewRenderer) {
+    public void startRTC(String url, String roomId, SurfaceViewRenderer surfaceViewRenderer, SendOfferCallback sendOfferCallback) {
+        mSendOfferCallback = sendOfferCallback;
         callStartedTimeMs = System.currentTimeMillis();
         nowSurfaceViewRenderer = surfaceViewRenderer;
         RTCSetting rtcSetting = new RTCSetting(url, roomId);
@@ -218,6 +220,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
                             Log.e(TAG, "Sending " + sessionDescription.type + ", delay=" + delta + "ms");
                             if (signalingParameters.initiator) {
                                 appRtcClient.sendOfferSdp(sessionDescription);
+                                mSendOfferCallback.onSend();
                             } else {
                                 appRtcClient.sendAnswerSdp(sessionDescription);
                             }
@@ -236,6 +239,11 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
                     }
                 });
     }
+
+    public interface SendOfferCallback {
+        void onSend();
+    }
+
 
     @Override
     public void onIceCandidate(IceCandidate candidate) {
