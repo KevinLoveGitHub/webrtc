@@ -64,10 +64,13 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
     private String TAG = "RtcUtils";
     private static final int STAT_CALLBACK_PERIOD = 1000;
 
+    private static boolean connectAble = false;
+
     public boolean isActive = false;
     private SendOfferCallback mSendOfferCallback;
 
     public void init(Application context) {
+        connectAble = true;
         if (nowSurfaceViewRenderer != null) {
             destroy();
         }
@@ -181,6 +184,10 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void destroy() {
+        connectAble = false;
+        if (peerConnectionClient != null) {
+            peerConnectionClient.stopVideoSource();
+        }
         try {
             isActive = false;
             remoteProxyRenderer.setTarget(null);
@@ -220,7 +227,6 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
                             Log.e(TAG, "Sending " + sessionDescription.type + ", delay=" + delta + "ms");
                             if (signalingParameters.initiator) {
                                 appRtcClient.sendOfferSdp(sessionDescription);
-                                mSendOfferCallback.onSend();
                             } else {
                                 appRtcClient.sendAnswerSdp(sessionDescription);
                             }
@@ -343,6 +349,10 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
     @Override
     public void onConnectedToRoom(AppRTCClient.SignalingParameters params) {
         Log.e(TAG, "onConnectedToRoom");
+        if (!connectAble) {
+            destroy();
+            return;
+        }
         Observable.just(params)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<AppRTCClient.SignalingParameters>() {
@@ -369,6 +379,7 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
                             // Create offer. Offer SDP will be sent to answering client in
                             // PeerConnectionEvents.onLocalDescription event.
                             peerConnectionClient.createOffer();
+                            mSendOfferCallback.onSend();
                         } else {
                             if (params.offerSdp != null) {
                                 peerConnectionClient.setRemoteDescription(params.offerSdp);
@@ -500,7 +511,6 @@ public enum RtcUtils implements AppRTCClient.SignalingEvents, PeerConnectionClie
             if (enumerator.isFrontFacing(deviceName)) {
                 Logging.d("RtcUtils", "Creating front facing camera capturer.");
                 VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
-
                 if (videoCapturer != null) {
                     return videoCapturer;
                 }
